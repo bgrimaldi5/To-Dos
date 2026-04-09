@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My To-Do's</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #f0f4f9;
+      --card:       #ffffff;
+      --border:     #dde3ed;
+      --accent:     #125370;
+      --accent-h:   #0d3d52;
+      --text:       #1a1f36;
+      --muted:      #6b7694;
+      --faint:      #f7f9fc;
+      --overdue-bg: #fff4f4;
+      --overdue-b:  #fca5a5;
+      --done-text:  #a0a8c0;
+      --radius:     7px;
+      --green:      #1a7f4b;
+      --green-bg:   #f0faf4;
+      --red:        #d0021b;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 4rem;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--accent);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-icon svg {
+      width: 18px; height: 18px;
+      fill: none; stroke: white;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .header-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-email {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .btn-logout {
+      padding: 0.4rem 0.9rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-logout:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    /* ── Inactivity warning ── */
+    .inactivity-bar {
+      display: none;
+      background: #fff8e6;
+      border-bottom: 1px solid #f5c842;
+      padding: 0.6rem 2rem;
+      font-size: 0.85rem;
+      color: #7a5c00;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .inactivity-bar.show { display: block; }
+
+    /* ── Main content ── */
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* ── Stats row ── */
+    .stats {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      flex: 1;
+      min-width: 120px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+    }
+
+    .stat-num {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 500;
+      margin-top: 0.2rem;
+    }
+
+    /* ── Add task button ── */
+    .btn-add {
+      width: 100%;
+      padding: 0.8rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-add:hover  { background: var(--accent-h); }
+    .btn-add:active { transform: scale(0.99); }
+
+    /* ── New task form ── */
+    .new-task-form {
+      background: var(--card);
+      border: 1.5px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+
+    .new-task-form.open { display: block; }
+
+    .form-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .form-field label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-field input,
+    .form-field textarea {
+      padding: 0.6rem 0.8rem;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      color: var(--text);
+      background: var(--faint);
+      outline: none;
+      transition: border-color 0.2s ease;
+      resize: none;
+    }
+
+    .form-field input:focus,
+    .form-field textarea:focus { border-color: var(--accent); background: white; }
+
+    .form-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .btn-save {
+      padding: 0.55rem 1.2rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 9px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-save:hover { background: var(--accent-h); }
+
+    .btn-cancel {
+      padding: 0.55rem 1.2rem;
+      background: transparent;
+      color: var(--muted);
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel:hover { border-color: var(--muted); color: var(--text); }
+
+    /* ── Filter bar ── */
+    .filter-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 0.35rem 0.9rem;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      background: transparent;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn.active,
+    .filter-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    /* ── Task list ── */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+    }
+
+    .empty-state .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .empty-state p { font-size: 0.95rem; }
+
+    /* ── Task card ── */
+    .task-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .task-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+
+    .task-card.overdue {
+      background: var(--overdue-bg);
+      border-color: var(--overdue-b);
+    }
+
+    .task-card.done .task-title {
+      text-decoration: line-through;
+      color: var(--done-text);
+    }
+
+    /* Task header row — always visible */
+    .task-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.9rem 1rem;
+      cursor: pointer;
+    }
+
+    .task-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .task-card.done .task-checkbox {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .task-checkbox svg {
+      width: 11px; height: 11px;
+      fill: none; stroke: white;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .task-card.done .task-checkbox svg { opacity: 1; }
+
+    .task-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color 0.2s;
+    }
+
+    .task-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 0.2rem;
+      flex-wrap: wrap;
+    }
+
+    .task-due {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .task-due.overdue-label { color: var(--red); font-weight: 600; }
+
+    .task-expand-icon {
+      flex-shrink: 0;
+      color: var(--muted);
+      transition: transform 0.2s ease;
+      font-size: 0.75rem;
+    }
+
+    .task-card.expanded .task-expand-icon { transform: rotate(180deg); }
+
+    .task-delete {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 0.25rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .task-delete:hover { color: var(--red); background: var(--overdue-bg); }
+
+    .task-delete svg {
+      width: 15px; height: 15px;
+      fill: none; stroke: currentColor;
+      stroke-width: 2; stroke-linecap: round;
+    }
+
+    /* Expanded detail area */
+    .task-detail {
+      display: none;
+      padding: 0 1rem 1rem 3.45rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .task-card.expanded .task-detail { display: block; }
+
+    .task-detail-inner {
+      padding-top: 0.75rem;
+    }
+
+    .detail-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .detail-desc {
+      font-size: 0.875rem;
+      color: var(--text);
+      line-height: 1.6;
+      margin-bottom: 0.75rem;
+      white-space: pre-wrap;
+    }
+
+    .detail-date {
+      font-size: 0.875rem;
+      color: var(--text);
+    }
+
+    /* Edit inputs inside expanded card */
+    .detail-input,
+    .detail-textarea {
+      width: 100%;
+      padding: 0.5rem 0.7rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      color: var(--text);
+      background: var(--faint);
+      outline: none;
+      transition: border-color 0.2s;
+      resize: none;
+      margin-bottom: 0.75rem;
+    }
+
+    .detail-input:focus,
+    .detail-textarea:focus { border-color: var(--accent); background: white; }
+
+    .detail-save-btn {
+      padding: 0.4rem 0.9rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .detail-save-btn:hover { background: var(--accent-h); }
+
+    /* ── Loading spinner ── */
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* ── Delete confirmation modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 20, 40, 0.45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem 1.5rem 1.5rem;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      text-align: center;
+    }
+
+    .modal-icon {
+      width: 44px;
+      height: 44px;
+      background: #fff0f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+    }
+
+    .modal-icon svg {
+      width: 20px; height: 20px;
+      fill: none; stroke: var(--red);
+      stroke-width: 2.5; stroke-linecap: round;
+    }
+
+    .modal h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+
+    .modal p {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    .modal-cancel {
+      flex: 1;
+      padding: 0.65rem;
+      background: transparent;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal-cancel:hover { border-color: var(--muted); color: var(--text); }
+
+    .modal-confirm {
+      flex: 1;
+      padding: 0.65rem;
+      background: var(--red);
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .modal-confirm:hover { opacity: 0.88; }
+
+    @media (max-width: 500px) {
+      header { padding: 0.75rem 1rem; }
+      .user-email { display: none; }
+      main { padding: 1.25rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+        </svg>
+      </div>
+      <span class="header-title">My To-Do's</span>
+    </div>
+    <div class="header-right">
+      <span class="user-email" id="user-email"></span>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </header>
+
+  <div class="inactivity-bar" id="inactivity-bar">
+    &#9888;&#xFE0F; You'll be signed out in 1 minute due to inactivity.
+  </div>
+
+  <main>
+    <div id="loading" class="loading">Loading your tasks...</div>
+
+    <div id="app-content" style="display:none">
+
+      <!-- Stats -->
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-num" id="stat-total">0</div>
+          <div class="stat-label">Upcoming Tasks</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-done">0</div>
+          <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-overdue" style="color:#d0021b">0</div>
+          <div class="stat-label">Overdue</div>
+        </div>
+      </div>
+
+      <!-- Add task -->
+      <button class="btn-add" id="btn-add" onclick="toggleForm()">
+        <span style="font-size:1.2rem; line-height:1">+</span> Add New Task
+      </button>
+
+      <!-- New task form -->
+      <div class="new-task-form" id="new-task-form">
+        <div class="form-row">
+          <div class="form-field" style="flex:2; min-width:200px">
+            <label>Task Title *</label>
+            <input type="text" id="new-title" placeholder="What needs to be done?" />
+          </div>
+          <div class="form-field" style="flex:1">
+            <label>Due Date</label>
+            <input type="date" id="new-due" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field" style="flex:1; min-width:100%">
+            <label>Description (optional)</label>
+            <textarea id="new-desc" rows="2" placeholder="Add any notes or details..."></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-cancel" onclick="toggleForm()">Cancel</button>
+          <button class="btn-save"   onclick="addTask()">Save Task</button>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="setFilter('active',  this)">Upcoming</button>
+        <button class="filter-btn"        onclick="setFilter('overdue', this)">Overdue</button>
+        <button class="filter-btn"        onclick="setFilter('done',    this)">Completed</button>
+        <button class="filter-btn"        onclick="setFilter('all',     this)">All</button>
+      </div>
+
+      <!-- Task list -->
+      <div class="task-list" id="task-list"></div>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    var SUPABASE_URL = 'https://ejyoxndpakldndmrwrkz.supabase.co';
+    var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqeW94bmRwYWtsZG5kbXJ3cmt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NzYwNTIsImV4cCI6MjA5MTE1MjA1Mn0.EdSSFPokXOGgfQi0aOru7T03TAzbeuVCSNI_F9sQYhE';
+    var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    var currentUser  = null;
+    var allTasks     = [];
+    var currentFilter = 'active';
+
+    // ── Inactivity timer (5 min = 300s, warn at 4 min = 240s) ──
+    var INACTIVITY_LIMIT = 300 * 1000;
+    var WARN_AT          = 240 * 1000;
+    var inactivityTimer  = null;
+    var warnTimer        = null;
+
+    function resetInactivityTimer() {
+      clearTimeout(inactivityTimer);
+      clearTimeout(warnTimer);
+      document.getElementById('inactivity-bar').classList.remove('show');
+
+      warnTimer = setTimeout(function() {
+        document.getElementById('inactivity-bar').classList.add('show');
+      }, WARN_AT);
+
+      inactivityTimer = setTimeout(function() {
+        logout();
+      }, INACTIVITY_LIMIT);
+    }
+
+    ['mousemove','keydown','mousedown','touchstart','scroll'].forEach(function(evt) {
+      document.addEventListener(evt, resetInactivityTimer, true);
+    });
+
+    // ── Auth guard ──
+    sb.auth.getSession().then(function(res) {
+      if (!res.data.session) {
+        window.location.href = 'login.html';
+        return;
+      }
+      currentUser = res.data.session.user;
+      document.getElementById('user-email').textContent = currentUser.email;
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app-content').style.display = 'block';
+      resetInactivityTimer();
+      loadTasks();
+    });
+
+    function logout() {
+      sb.auth.signOut().then(function() {
+        window.location.href = 'login.html';
+      });
+    }
+
+    // ── Load tasks ──
+    function loadTasks() {
+      sb.from('tasks')
+        .select('*')
+        .order('is_complete', { ascending: true })
+        .order('due_date',    { ascending: true, nullsFirst: false })
+        .order('created_at',  { ascending: false })
+        .then(function(res) {
+          if (res.error) { console.error(res.error); return; }
+          allTasks = res.data || [];
+          renderTasks();
+        });
+    }
+
+    // ── Render ──
+    function renderTasks() {
+      var today  = new Date(); today.setHours(0,0,0,0);
+      var list   = document.getElementById('task-list');
+      var tasks  = allTasks.filter(function(t) {
+        if (currentFilter === 'active')  return !t.is_complete;
+        if (currentFilter === 'done')    return t.is_complete;
+        if (currentFilter === 'overdue') return !t.is_complete && t.due_date && new Date(t.due_date) < today;
+        return true;
+      });
+
+      // Update stats
+      var upcoming = allTasks.filter(function(t){ return !t.is_complete; }).length;
+      var done     = allTasks.filter(function(t){ return t.is_complete; }).length;
+      var overdue  = allTasks.filter(function(t){
+        return !t.is_complete && t.due_date && new Date(t.due_date) < today;
+      }).length;
+      document.getElementById('stat-total').textContent   = upcoming;
+      document.getElementById('stat-done').textContent    = done;
+      document.getElementById('stat-overdue').textContent = overdue;
+
+      if (tasks.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-icon">&#x2713;</div><p>No tasks here. You\'re all caught up!</p></div>';
+        return;
+      }
+
+      list.innerHTML = '';
+      tasks.forEach(function(task) {
+        list.appendChild(buildTaskCard(task, today));
+      });
+    }
+
+    function buildTaskCard(task, today) {
+      var isOverdue = !task.is_complete && task.due_date && new Date(task.due_date) < today;
+
+      var card = document.createElement('div');
+      card.className = 'task-card' +
+        (task.is_complete ? ' done' : '') +
+        (isOverdue        ? ' overdue' : '');
+      card.dataset.id = task.id;
+      card.dataset.complete = task.is_complete ? '1' : '0';
+
+      // Format due date display
+      var dueDisplay = '';
+      var dueClass   = 'task-due';
+      if (task.due_date) {
+        var d = new Date(task.due_date + 'T00:00:00');
+        dueDisplay = 'Due ' + d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+        if (isOverdue) { dueDisplay = '&#9888; Overdue &mdash; ' + dueDisplay; dueClass += ' overdue-label'; }
+      }
+
+      card.innerHTML =
+        '<div class="task-header" onclick="toggleExpand(\'' + task.id + '\')">' +
+          '<div class="task-checkbox" onclick="event.stopPropagation(); toggleComplete(\'' + task.id + '\')">' +
+            '<svg viewBox="0 0 12 12"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>' +
+          '</div>' +
+          '<div class="task-main">' +
+            '<div class="task-title">' + escHtml(task.title) + '</div>' +
+            (dueDisplay ? '<div class="task-meta"><span class="' + dueClass + '">' + dueDisplay + '</span></div>' : '') +
+          '</div>' +
+          '<span class="task-expand-icon">&#9660;</span>' +
+          '<button class="task-delete" onclick="event.stopPropagation(); deleteTask(\'' + task.id + '\')" title="Delete task">' +
+            '<svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6"/><path d="M10,11v6M14,11v6"/><path d="M9,6V4h6v2"/></svg>' +
+          '</button>' +
+        '</div>' +
+        '<div class="task-detail">' +
+          '<div class="task-detail-inner">' +
+            '<div class="detail-label">Description</div>' +
+            '<textarea class="detail-textarea" rows="3" placeholder="Add a description..." onblur="saveDetail(\'' + task.id + '\')">' + escHtml(task.description || '') + '</textarea>' +
+            '<div class="detail-label">Due Date</div>' +
+            '<input type="date" class="detail-input" value="' + (task.due_date || '') + '" onblur="saveDetail(\'' + task.id + '\')" />' +
+          '</div>' +
+        '</div>';
+
+      return card;
+    }
+
+    function toggleExpand(id) {
+      var card = document.querySelector('.task-card[data-id="' + id + '"]');
+      if (card) card.classList.toggle('expanded');
+    }
+
+    // ── Add task ──
+    function toggleForm() {
+      var form = document.getElementById('new-task-form');
+      var isOpen = form.classList.toggle('open');
+      if (isOpen) {
+        document.getElementById('new-title').focus();
+      } else {
+        document.getElementById('new-title').value = '';
+        document.getElementById('new-due').value   = '';
+        document.getElementById('new-desc').value  = '';
+      }
+    }
+
+    function addTask() {
+      var title = document.getElementById('new-title').value.trim();
+      var due   = document.getElementById('new-due').value   || null;
+      var desc  = document.getElementById('new-desc').value.trim() || null;
+
+      if (!title) {
+        document.getElementById('new-title').focus();
+        document.getElementById('new-title').style.borderColor = '#d0021b';
+        setTimeout(function(){ document.getElementById('new-title').style.borderColor = ''; }, 1500);
+        return;
+      }
+
+      sb.from('tasks').insert({
+        user_id:     currentUser.id,
+        title:       title,
+        description: desc,
+        due_date:    due,
+        is_complete: false
+      }).select().then(function(res) {
+        if (res.error) { console.error(res.error); return; }
+        allTasks.unshift(res.data[0]);
+        toggleForm();
+        renderTasks();
+      });
+    }
+
+    // ── Toggle complete ──
+    function toggleComplete(id) {
+      // Coerce to number in case it came in as a string from the DOM
+      id = isNaN(id) ? id : Number(id);
+
+      var card = document.querySelector('.task-card[data-id="' + id + '"]');
+      if (!card) { console.error('toggleComplete: card not found for id', id); return; }
+
+      var currentState = card.dataset.complete === '1';
+      var newState     = !currentState;
+
+      console.log('toggleComplete called — id:', id, '| currentState:', currentState, '| newState:', newState);
+
+      // Optimistically update the UI immediately
+      card.dataset.complete = newState ? '1' : '0';
+      if (newState) {
+        card.classList.add('done');
+        card.classList.remove('overdue');
+      } else {
+        card.classList.remove('done');
+      }
+
+      // Update allTasks array — use == (not ===) to match regardless of number/string
+      allTasks = allTasks.map(function(t) {
+        return t.id == id ? Object.assign({}, t, { is_complete: newState }) : t;
+      });
+
+      // Persist to Supabase
+      sb.from('tasks')
+        .update({ is_complete: newState })
+        .eq('id', id)
+        .select()
+        .then(function(res) {
+          console.log('Supabase update response:', JSON.stringify(res));
+          if (res.error) {
+            console.error('Supabase update error:', res.error);
+            // Revert on error
+            card.dataset.complete = currentState ? '1' : '0';
+            allTasks = allTasks.map(function(t) {
+              return t.id == id ? Object.assign({}, t, { is_complete: currentState }) : t;
+            });
+            renderTasks();
+            return;
+          }
+          // Re-sort and re-render after confirmed save
+          allTasks.sort(function(a, b) {
+            if (a.is_complete !== b.is_complete) return a.is_complete ? 1 : -1;
+            if (!a.due_date && !b.due_date) return 0;
+            if (!a.due_date) return 1;
+            if (!b.due_date) return -1;
+            return new Date(a.due_date) - new Date(b.due_date);
+          });
+          renderTasks();
+        });
+    }
+
+    // ── Save detail edits (on blur) ──
+    function saveDetail(id) {
+      var card = document.querySelector('.task-card[data-id="' + id + '"]');
+      if (!card) return;
+      var desc    = card.querySelector('.detail-textarea').value.trim() || null;
+      var dueDate = card.querySelector('.detail-input').value || null;
+
+      sb.from('tasks').update({ description: desc, due_date: dueDate }).eq('id', id).then(function(res) {
+        if (res.error) { console.error(res.error); return; }
+        allTasks = allTasks.map(function(t) {
+          return t.id === id ? Object.assign({}, t, { description: desc, due_date: dueDate }) : t;
+        });
+        // Re-render after a brief moment so the blur completes naturally
+        setTimeout(renderTasks, 100);
+      });
+    }
+
+    // ── Delete ──
+    var pendingDeleteId = null;
+
+    function deleteTask(id) {
+      pendingDeleteId = id;
+      document.getElementById('delete-modal').classList.add('show');
+      document.getElementById('modal-confirm-btn').onclick = confirmDelete;
+    }
+
+    function confirmDelete() {
+      var id = pendingDeleteId;
+      if (!id) return;
+      closeDeleteModal();
+      sb.from('tasks').delete().eq('id', id).then(function(res) {
+        if (res.error) { console.error(res.error); return; }
+        allTasks = allTasks.filter(function(t) { return t.id != id; });
+        renderTasks();
+      });
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('delete-modal').classList.remove('show');
+      pendingDeleteId = null;
+    }
+
+    // Close modal if user clicks the dark overlay behind it
+    document.getElementById('delete-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeDeleteModal();
+    });
+
+    // ── Filter ──
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderTasks();
+    }
+
+    // ── Helpers ──
+    function escHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+  <!-- Delete confirmation modal -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6"/><path d="M10,11v6M14,11v6"/><path d="M9,6V4h6v2"/></svg>
+      </div>
+      <h3>Delete this task?</h3>
+      <p>This can't be undone.</p>
+      <div class="modal-actions">
+        <button class="modal-cancel"  onclick="closeDeleteModal()">Cancel</button>
+        <button class="modal-confirm" id="modal-confirm-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
